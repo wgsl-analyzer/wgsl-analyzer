@@ -5,6 +5,7 @@ use rowan::NodeOrToken;
 use syntax::{SyntaxNode, SyntaxToken};
 
 use crate::{
+    FormattingOptions,
     generators::comments::{Comment, read_comment},
     print_item_buffer::PrintItemBuffer,
 };
@@ -74,7 +75,10 @@ pub(crate) fn is_ignore_parent_pragma_comment(node: &NodeOrToken<SyntaxNode, Syn
 }
 
 #[must_use]
-pub(crate) fn gen_ignore_pragma(ignore_pragma: &IgnorePragma) -> PrintItemBuffer {
+pub(crate) fn gen_ignore_pragma(
+    #[expect(unused, reason = "no config is necessary here (yet)")] options: &FormattingOptions,
+    ignore_pragma: &IgnorePragma,
+) -> PrintItemBuffer {
     let mut formatted = PrintItemBuffer::default();
 
     if ignore_pragma.block {

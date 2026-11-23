@@ -9,6 +9,7 @@ use syntax::{
 };
 
 use crate::{
+    AttributeFormattingStyle, FormattingOptions,
     ast_parse::{
         DiscardBlankspace, DiscardComma, DiscardParenthesis, NoTrivia, StopAtNewline, Succeeding,
         parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
@@ -55,6 +56,7 @@ pub(crate) enum AttributeCategorization {
 }
 
 fn gen_attribute_group<T>(
+    options: &FormattingOptions,
     mut attributes: Vec<(T, &NodeWithTrivia)>,
     separator: &Request,
 ) -> FormatDocumentResult<PrintItemBuffer>
@@ -69,9 +71,9 @@ where
         .map(|(_, attribute)| attribute)
         .with_position()
     {
-        formatted.extend(gen_node_preceding_trivia(attribute)?);
-        formatted.extend(gen_node_content(attribute)?);
-        formatted.extend(gen_node_succeeding_trivia(attribute)?);
+        formatted.extend(gen_node_preceding_trivia(options, attribute)?);
+        formatted.extend(gen_node_content(options, attribute)?);
+        formatted.extend(gen_node_succeeding_trivia(options, attribute)?);
         if !position.is_exactly_one() && !position.is_last {
             formatted.request(separator.clone());
         }
@@ -79,7 +81,10 @@ where
     Ok(formatted)
 }
 
-pub(crate) fn categorize_attribute(attribute: &ast::Attribute) -> AttributeCategorization {
+pub(crate) fn categorize_attribute(
+    options: &FormattingOptions,
+    attribute: &ast::Attribute,
+) -> AttributeCategorization {
     use AttributeCategorization::{Grouped, Inline, Ungrouped};
     use ast::{ConditionalAttributeKind, EntrypointAttributeKind};
 
@@ -87,8 +92,26 @@ pub(crate) fn categorize_attribute(attribute: &ast::Attribute) -> AttributeCateg
         AttributeKind::Diagnostic => Grouped(AttributeGroup::Diagnostics, 0),
         AttributeKind::Size => Grouped(AttributeGroup::OffsetAlignSize, 2),
         AttributeKind::Align => Grouped(AttributeGroup::OffsetAlignSize, 1),
-        AttributeKind::Group => Grouped(AttributeGroup::BindingGroup, 0),
-        AttributeKind::Binding => Grouped(AttributeGroup::BindingGroup, 1),
+        AttributeKind::Group => {
+            if matches!(
+                options.binding_group_style,
+                AttributeFormattingStyle::Grouped
+            ) {
+                Grouped(AttributeGroup::BindingGroup, 0)
+            } else {
+                Inline(4)
+            }
+        },
+        AttributeKind::Binding => {
+            if matches!(
+                options.binding_group_style,
+                AttributeFormattingStyle::Grouped
+            ) {
+                Grouped(AttributeGroup::BindingGroup, 1)
+            } else {
+                Inline(5)
+            }
+        },
         AttributeKind::Entrypoint(EntrypointAttributeKind::Compute) => {
             Grouped(AttributeGroup::ComputeWorkgroup, 0)
         },
@@ -157,7 +180,8 @@ fn get_attribute_layout(attribute_list: &AttributeList) -> AttributeLayout {
 }
 
 pub(crate) fn gen_attribute_list(
-    attribute_list: &AttributeList
+    options: &FormattingOptions,
+    attribute_list: &AttributeList,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute_list.syntax());
 
@@ -202,7 +226,7 @@ pub(crate) fn gen_attribute_list(
     let mut attribute_group_inlined_with_target = Vec::new();
 
     for (attribute_item, attribute) in &attributes {
-        match categorize_attribute(attribute) {
+        match categorize_attribute(options, attribute) {
             AttributeCategorization::Ungrouped(order) => {
                 ungrouped_attributes.push((order, attribute_item));
             },
@@ -228,19 +252,28 @@ pub(crate) fn gen_attribute_list(
 
     // Ungrouped attributes go first
     if !ungrouped_attributes.is_empty() {
-        formatted.extend(gen_attribute_group(ungrouped_attributes, &group_separator)?);
+        formatted.extend(gen_attribute_group(
+            options,
+            ungrouped_attributes,
+            &group_separator,
+        )?);
         formatted.request(group_separator.clone());
     }
 
     // The grouped attributes in-order.
     // They are ordered by the `AttributeGroup`'s discriminator because of the `BTreeMap`.
     for (_, attribute) in grouped_attributes {
-        formatted.extend(gen_attribute_group(attribute, &expect_space_or_linebreak)?);
+        formatted.extend(gen_attribute_group(
+            options,
+            attribute,
+            &expect_space_or_linebreak,
+        )?);
         formatted.request(group_separator.clone());
     }
     // Then attributes that should be inline with the target
     if !attribute_group_inlined_with_target.is_empty() {
         formatted.extend(gen_attribute_group(
+            options,
             attribute_group_inlined_with_target,
             &expect_space_or_linebreak,
         )?);
@@ -254,16 +287,20 @@ pub(crate) fn gen_attribute_list(
     Ok(formatted)
 }
 
-pub(crate) fn gen_attribute(attribute: &ast::Attribute) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_attribute(
+    options: &FormattingOptions,
+    attribute: &ast::Attribute,
+) -> FormatDocumentResult<PrintItemBuffer> {
     if let AttributeKind::Conditional(_) = attribute.kind() {
-        gen_attr_condcomp(attribute)
+        gen_attr_condcomp(options, attribute)
     } else {
-        gen_attr_standard(attribute)
+        gen_attr_standard(options, attribute)
     }
 }
 
 pub(crate) fn gen_attribute_arguments(
-    arguments: &ast::AttributeArguments
+    options: &FormattingOptions,
+    arguments: &ast::AttributeArguments,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(arguments.syntax());
@@ -298,9 +335,9 @@ pub(crate) fn gen_attribute_arguments(
 
         for (position, item) in item_arguments.into_iter().with_position() {
             multiline_group.grouped_newline_or_space();
-            multiline_group.extend(gen_node_preceding_trivia(&item)?);
+            multiline_group.extend(gen_node_preceding_trivia(options, &item)?);
             if item.has_content() {
-                multiline_group.extend(gen_node_content(&item)?);
+                multiline_group.extend(gen_node_content(options, &item)?);
                 multiline_group.request(Request::discourage(RequestItem::Space));
                 if position.is_last || position.is_exactly_one() {
                     multiline_group.extend_if_multi_line({
@@ -312,7 +349,7 @@ pub(crate) fn gen_attribute_arguments(
                     multiline_group.push_sc(sc!(","));
                 }
             }
-            multiline_group.extend(gen_node_succeeding_trivia(&item)?);
+            multiline_group.extend(gen_node_succeeding_trivia(options, &item)?);
         }
 
         multiline_group.request(Request::discourage(RequestItem::Space));
@@ -330,7 +367,8 @@ pub(crate) fn gen_attribute_arguments(
 /// and
 /// `'@' 'expected_token' '(' expression (',' expression)* [','] ')'`.
 pub(crate) fn gen_attr_standard(
-    attribute: &ast::Attribute
+    options: &FormattingOptions,
+    attribute: &ast::Attribute,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(attribute.syntax());
@@ -346,14 +384,17 @@ pub(crate) fn gen_attr_standard(
 
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("@"));
-    formatted.extend(gen_node_with_trivia(&item_attribute_name)?);
+    formatted.extend(gen_node_with_trivia(options, &item_attribute_name)?);
     if let Some(item_arguments) = item_arguments {
-        formatted.extend(gen_node_with_trivia(&item_arguments)?);
+        formatted.extend(gen_node_with_trivia(options, &item_arguments)?);
     }
     Ok(formatted)
 }
 
-fn gen_attr_condcomp(attribute: &ast::Attribute) -> FormatDocumentResult<PrintItemBuffer> {
+fn gen_attr_condcomp(
+    options: &FormattingOptions,
+    attribute: &ast::Attribute,
+) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Context
     let merge_with_preceding_compound = if TEMP_EXPERIMENTAL_CONDCOMP_MODE
         .condcomp_body_braces_on_same_line
@@ -396,7 +437,7 @@ fn gen_attr_condcomp(attribute: &ast::Attribute) -> FormatDocumentResult<PrintIt
     if dedent {
         formatted.start_ignoring_indent_before_requests();
     }
-    formatted.extend(gen_attr_standard(attribute)?);
+    formatted.extend(gen_attr_standard(options, attribute)?);
 
     if dedent {
         formatted.finish_ignoring_indent_before_requests();

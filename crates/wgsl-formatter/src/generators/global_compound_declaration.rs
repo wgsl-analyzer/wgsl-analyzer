@@ -2,6 +2,7 @@ use itertools::Itertools as _;
 use syntax::{AstNode as _, ast::GlobalCompoundDeclaration};
 
 use crate::{
+    FormattingOptions,
     ast_parse::{
         DiscardBraces, StopAtNewline, Succeeding, parse_end, parse_many_nodes_with,
         parse_node_with, syntax_iter,
@@ -17,6 +18,7 @@ use crate::{
 };
 
 pub(crate) fn gen_global_compound_declaration(
+    options: &FormattingOptions,
     with_trivia: &NodeWithTrivia,
     node: &GlobalCompoundDeclaration,
 ) -> FormatDocumentResult<PrintItemBuffer> {
@@ -59,7 +61,7 @@ pub(crate) fn gen_global_compound_declaration(
     if dedent_braces {
         formatted.start_ignoring_indent_before_requests();
     }
-    formatted.extend(gen_node_with_trivia(&item_open_brace)?);
+    formatted.extend(gen_node_with_trivia(options, &item_open_brace)?);
     if dedent_braces {
         formatted.finish_ignoring_indent_before_requests();
     }
@@ -73,7 +75,7 @@ pub(crate) fn gen_global_compound_declaration(
 
     for item in items {
         formatted.request(Request::expect(RequestItem::LineBreak));
-        formatted.extend(gen_node_with_trivia(&item)?);
+        formatted.extend(gen_node_with_trivia(options, &item)?);
     }
 
     if creates_indentation {

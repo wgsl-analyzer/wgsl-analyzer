@@ -3,6 +3,7 @@ use dprint_core_macros::sc;
 use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast};
 
 use crate::{
+    FormattingOptions,
     ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::statement_needs_semicolon_policy,
     generators::node::gen_node_with_trivia,
@@ -14,27 +15,31 @@ use crate::{
 };
 
 pub(crate) fn gen_const_declaration_statement(
-    statement: &ast::ConstantDeclaration
+    options: &FormattingOptions,
+    statement: &ast::ConstantDeclaration,
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_var_let_const_override_statement(BindingKind::Const, statement.syntax())
+    gen_var_let_const_override_statement(options, BindingKind::Const, statement.syntax())
 }
 
 pub(crate) fn gen_let_declaration_statement(
-    statement: &ast::LetDeclaration
+    options: &FormattingOptions,
+    statement: &ast::LetDeclaration,
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_var_let_const_override_statement(BindingKind::Let, statement.syntax())
+    gen_var_let_const_override_statement(options, BindingKind::Let, statement.syntax())
 }
 
 pub(crate) fn gen_var_declaration_statement(
-    statement: &ast::VariableDeclaration
+    options: &FormattingOptions,
+    statement: &ast::VariableDeclaration,
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_var_let_const_override_statement(BindingKind::Var, statement.syntax())
+    gen_var_let_const_override_statement(options, BindingKind::Var, statement.syntax())
 }
 
 pub(crate) fn gen_override_declaration_statement(
-    statement: &ast::OverrideDeclaration
+    options: &FormattingOptions,
+    statement: &ast::OverrideDeclaration,
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_var_let_const_override_statement(BindingKind::Override, statement.syntax())
+    gen_var_let_const_override_statement(options, BindingKind::Override, statement.syntax())
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -69,6 +74,7 @@ impl BindingKind {
 }
 
 fn gen_var_let_const_override_statement(
+    options: &FormattingOptions,
     kind: BindingKind,
     syntax_node: &SyntaxNode,
 ) -> FormatDocumentResult<PrintItemBuffer> {
@@ -115,17 +121,17 @@ fn gen_var_let_const_override_statement(
     formatted.start_indent_before_requests();
 
     if let Some(item_template_list) = item_template_list {
-        formatted.extend(gen_node_with_trivia(&item_template_list)?);
+        formatted.extend(gen_node_with_trivia(options, &item_template_list)?);
     }
 
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_name)?);
+    formatted.extend(gen_node_with_trivia(options, &item_name)?);
 
     if let Some(type_specifier) = items_type {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(":"));
         formatted.request(Request::expect(RequestItem::Space));
-        formatted.extend(gen_node_with_trivia(&type_specifier)?);
+        formatted.extend(gen_node_with_trivia(options, &type_specifier)?);
     }
 
     if let Some(value) = assignment {
@@ -134,7 +140,7 @@ fn gen_var_let_const_override_statement(
         formatted.push_sc(sc!("="));
         formatted.request(Request::expect(RequestItem::Space).or_newline());
         formatted.finish_new_line_group_after_requests();
-        formatted.extend(gen_node_with_trivia(&value)?);
+        formatted.extend(gen_node_with_trivia(options, &value)?);
     }
 
     if statement_needs_semicolon_policy(syntax_node) {

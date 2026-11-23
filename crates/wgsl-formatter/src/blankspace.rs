@@ -3,6 +3,7 @@ use rowan::NodeOrToken;
 use syntax::{SyntaxKind, SyntaxNode, SyntaxToken};
 
 use crate::{
+    FormattingOptions,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -61,7 +62,11 @@ pub(crate) fn read_blankspace(
     clippy::unnecessary_wraps,
     reason = "Keep the API homogeneous with all gen_* functions"
 )]
-pub(crate) fn gen_blankspace(blankspace: &Blankspace) -> FormatDocumentResult<PrintItemBuffer> {
+#[expect(unused, reason = "no config is necessary here (yet)")]
+pub(crate) fn gen_blankspace(
+    options: &FormattingOptions,
+    blankspace: &Blankspace,
+) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
     match blankspace {
         Blankspace::EmptyLine(_) => {

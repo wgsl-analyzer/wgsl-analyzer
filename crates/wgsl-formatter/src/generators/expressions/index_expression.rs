@@ -1,6 +1,7 @@
 use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast};
 
 use crate::{
+    FormattingOptions,
     ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
@@ -12,7 +13,8 @@ use crate::{
 };
 
 pub(crate) fn gen_index_expression(
-    index_expression: &ast::IndexExpression
+    options: &FormattingOptions,
+    index_expression: &ast::IndexExpression,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(index_expression.syntax());
@@ -29,23 +31,23 @@ pub(crate) fn gen_index_expression(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    formatted.extend(gen_node_with_trivia(&item_array_expr)?);
+    formatted.extend(gen_node_with_trivia(options, &item_array_expr)?);
 
     let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
 
-    multiline_group.extend(gen_node_with_trivia(&item_bracket_left)?);
+    multiline_group.extend(gen_node_with_trivia(options, &item_bracket_left)?);
     multiline_group.start_indent_before_requests();
     multiline_group.grouped_possible_newline();
     multiline_group.request(Request::discourage(RequestItem::EmptyLine));
     multiline_group.request(Request::discourage(RequestItem::Space));
 
-    multiline_group.extend(gen_node_with_trivia(&item_actual_index)?);
+    multiline_group.extend(gen_node_with_trivia(options, &item_actual_index)?);
     multiline_group.grouped_newline_or_space();
 
     multiline_group.finish_indent_before_requests();
     multiline_group.request(Request::discourage(RequestItem::Space));
 
-    multiline_group.extend(gen_node_with_trivia(&item_bracket_right)?);
+    multiline_group.extend(gen_node_with_trivia(options, &item_bracket_right)?);
 
     multiline_group.end_before_requests();
 

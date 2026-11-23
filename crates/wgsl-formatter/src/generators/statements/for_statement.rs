@@ -5,6 +5,7 @@ use syntax::{
 };
 
 use crate::{
+    FormattingOptions,
     ast_parse::{
         DiscardBlankspace, NoTrivia, StopAtNewline, Succeeding, parse_end, parse_node_with,
         syntax_iter,
@@ -19,7 +20,8 @@ use crate::{
 };
 
 pub(crate) fn gen_for_statement(
-    statement: &ast::ForStatement
+    options: &FormattingOptions,
+    statement: &ast::ForStatement,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
@@ -43,7 +45,7 @@ pub(crate) fn gen_for_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_for)?);
+    formatted.extend(gen_node_with_trivia(options, &item_for)?);
     formatted.push_sc(sc!("("));
     formatted.request(Request::discourage(RequestItem::EmptyLine));
     formatted.request(Request::discourage(RequestItem::Space));
@@ -54,25 +56,25 @@ pub(crate) fn gen_for_statement(
     multiline_group.grouped_newline_or_space();
 
     if let Some(item_initializer) = item_initializer {
-        multiline_group.extend(gen_node_with_trivia(&item_initializer)?);
+        multiline_group.extend(gen_node_with_trivia(options, &item_initializer)?);
     } else {
         multiline_group.request(Request::discourage(RequestItem::Space));
     }
     multiline_group.request(Request::discourage(RequestItem::Space));
-    multiline_group.extend(gen_node_with_trivia(&item_semicolon_1)?);
+    multiline_group.extend(gen_node_with_trivia(options, &item_semicolon_1)?);
 
     multiline_group.grouped_newline_or_space();
     if let Some(item_condition) = item_condition {
-        multiline_group.extend(gen_node_with_trivia(&item_condition)?);
+        multiline_group.extend(gen_node_with_trivia(options, &item_condition)?);
     } else {
         multiline_group.request(Request::discourage(RequestItem::Space));
     }
     multiline_group.request(Request::discourage(RequestItem::Space));
-    multiline_group.extend(gen_node_with_trivia(&item_semicolon_2)?);
+    multiline_group.extend(gen_node_with_trivia(options, &item_semicolon_2)?);
 
     multiline_group.grouped_newline_or_space();
     if let Some(item_continuing) = item_continuing {
-        multiline_group.extend(gen_node_with_trivia(&item_continuing)?);
+        multiline_group.extend(gen_node_with_trivia(options, &item_continuing)?);
     } else {
         multiline_group.request(Request::discourage(RequestItem::Space));
     }
@@ -88,12 +90,13 @@ pub(crate) fn gen_for_statement(
     multiline_group.end_before_requests();
 
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(gen_node_with_trivia(options, &item_body)?);
     Ok(formatted)
 }
 
 pub(crate) fn gen_for_statement_initializer(
-    node: &ast::SyntaxNode
+    options: &FormattingOptions,
+    node: &ast::SyntaxNode,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // === Parse ===
     let mut syntax = syntax_iter(node.syntax());
@@ -102,11 +105,12 @@ pub(crate) fn gen_for_statement_initializer(
     parse_end(&mut syntax)?;
 
     // === Format ===
-    gen_node_with_trivia(&item_statement)
+    gen_node_with_trivia(options, &item_statement)
 }
 
 pub(crate) fn gen_for_statement_condition(
-    node: &ast::SyntaxNode
+    options: &FormattingOptions,
+    node: &ast::SyntaxNode,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // === Parse ===
     let mut sub_syntax = syntax_iter(node.syntax());
@@ -115,11 +119,12 @@ pub(crate) fn gen_for_statement_condition(
     parse_end(&mut sub_syntax)?;
 
     // === Format ===
-    gen_node_with_trivia(&item_condition)
+    gen_node_with_trivia(options, &item_condition)
 }
 
 pub(crate) fn gen_for_statement_continuing_part(
-    node: &ast::SyntaxNode
+    options: &FormattingOptions,
+    node: &ast::SyntaxNode,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
 
@@ -127,7 +132,7 @@ pub(crate) fn gen_for_statement_continuing_part(
     let item_continuing = parse_node_with(&mut syntax, DiscardBlankspace);
     parse_end(&mut syntax)?;
 
-    gen_node_with_trivia(&item_continuing)
+    gen_node_with_trivia(options, &item_continuing)
 }
 
 #[must_use]

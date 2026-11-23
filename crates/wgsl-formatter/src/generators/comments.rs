@@ -2,9 +2,12 @@ use itertools::Itertools as _;
 use rowan::NodeOrToken;
 use syntax::{SyntaxKind, SyntaxNode, SyntaxToken};
 
-use crate::print_item_buffer::{
-    PrintItemBuffer,
-    spacing_request::{Request, RequestItem},
+use crate::{
+    FormattingOptions,
+    print_item_buffer::{
+        PrintItemBuffer,
+        spacing_request::{Request, RequestItem},
+    },
 };
 
 // We don't have a Comment SyntaxNode in the AST yet, so we use a custom enum and parser function
@@ -32,7 +35,10 @@ pub(crate) fn read_comment(item: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Optio
 }
 
 #[must_use]
-pub(crate) fn gen_comment(item: &Comment) -> PrintItemBuffer {
+pub(crate) fn gen_comment(
+    #[expect(unused, reason = "no config is necessary here (yet)")] options: &FormattingOptions,
+    item: &Comment,
+) -> PrintItemBuffer {
     let mut formatted = PrintItemBuffer::default();
     match item {
         Comment::Block(content) => {

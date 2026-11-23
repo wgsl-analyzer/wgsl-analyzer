@@ -4,6 +4,7 @@ use itertools::Itertools as _;
 use syntax::{AstNode as _, SyntaxKind, ast};
 
 use crate::{
+    FormattingOptions,
     ast_parse::{
         DiscardBlankspace, DiscardComma, DiscardTemplateDelimiters, NoTrivia, StopAtNewline,
         Succeeding, parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
@@ -22,7 +23,8 @@ use crate::{
 };
 
 pub(crate) fn gen_type_specifier(
-    type_specifier: &ast::TypeSpecifier
+    options: &FormattingOptions,
+    type_specifier: &ast::TypeSpecifier,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(type_specifier.syntax());
@@ -37,15 +39,16 @@ pub(crate) fn gen_type_specifier(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_path)?);
+    formatted.extend(gen_node_with_trivia(options, &item_path)?);
     if let Some(template) = item_template {
-        formatted.extend(gen_node_with_trivia(&template)?);
+        formatted.extend(gen_node_with_trivia(options, &template)?);
     }
     Ok(formatted)
 }
 
 pub(crate) fn gen_template_list(
-    template_list: &ast::TemplateList
+    options: &FormattingOptions,
+    template_list: &ast::TemplateList,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let must_be_oneline =
         context_policies::template_must_be_one_line_policy(template_list.syntax());
@@ -98,9 +101,9 @@ pub(crate) fn gen_template_list(
                 }
             }
 
-            multiline_group.extend(gen_node_preceding_trivia(&item)?);
+            multiline_group.extend(gen_node_preceding_trivia(options, &item)?);
             if item.has_content() {
-                multiline_group.extend(gen_node_content(&item)?);
+                multiline_group.extend(gen_node_content(options, &item)?);
                 multiline_group.request(Request::discourage(RequestItem::Space));
                 if position.is_last || position.is_exactly_one() {
                     multiline_group.extend_if_multi_line({
@@ -112,7 +115,7 @@ pub(crate) fn gen_template_list(
                     multiline_group.push_sc(sc!(","));
                 }
             }
-            multiline_group.extend(gen_node_succeeding_trivia(&item)?);
+            multiline_group.extend(gen_node_succeeding_trivia(options, &item)?);
         }
 
         multiline_group.request(Request::discourage(RequestItem::Space));

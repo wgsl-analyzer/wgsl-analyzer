@@ -32,14 +32,14 @@ pub struct FormattedRange {
 pub fn format_range(
     file: &SyntaxNode,
     range: TextRange,
-    config: &FormattingOptions,
+    options: &FormattingOptions,
 ) -> FormatDocumentResult<FormattedRange> {
     let node = match file.syntax().covering_element(range) {
         NodeOrToken::Node(node) => node,
         NodeOrToken::Token(token) => token.parent().ok_or(FormatDocumentError::MissingNode)?,
     };
 
-    format_node(&node, config).map(|formatted| FormattedRange {
+    format_node(&node, options).map(|formatted| FormattedRange {
         range: node.text_range(),
         formatted,
     })
@@ -67,7 +67,9 @@ pub fn format_node(
         succeeding_trivia: Vec::new(),
     };
 
-    format(options, || gen_node_with_trivia_no_newlines(&trivia))
+    format(options, || {
+        gen_node_with_trivia_no_newlines(options, &trivia)
+    })
 }
 
 fn format<F>(

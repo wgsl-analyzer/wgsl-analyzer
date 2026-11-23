@@ -1,13 +1,17 @@
 use syntax::{AstNode as _, ast};
 
 use crate::{
+    FormattingOptions,
     ast_parse::{DiscardBlankspace, parse_end, parse_many_nodes_with, syntax_iter},
     generators::node::gen_node_with_trivia,
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_path(path: &ast::Path) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_path(
+    options: &FormattingOptions,
+    path: &ast::Path,
+) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(path.syntax());
 
@@ -21,7 +25,7 @@ pub(crate) fn gen_path(path: &ast::Path) -> FormatDocumentResult<PrintItemBuffer
     let mut formatted = PrintItemBuffer::default();
 
     for item in items {
-        formatted.extend(gen_node_with_trivia(&item)?);
+        formatted.extend(gen_node_with_trivia(options, &item)?);
     }
     Ok(formatted)
 }

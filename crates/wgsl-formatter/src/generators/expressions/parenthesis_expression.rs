@@ -2,6 +2,7 @@ use dprint_core_macros::sc;
 use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast};
 
 use crate::{
+    FormattingOptions,
     ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::expression_parens_are_irrelevant_policy,
     generators::node::gen_node_with_trivia,
@@ -13,7 +14,8 @@ use crate::{
 };
 
 pub(crate) fn gen_parenthesis_expression(
-    parenthesis_expression: &ast::ParenthesisExpression
+    options: &FormattingOptions,
+    parenthesis_expression: &ast::ParenthesisExpression,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(parenthesis_expression.syntax());
@@ -35,7 +37,7 @@ pub(crate) fn gen_parenthesis_expression(
 
         formatted.request(Request::discourage(RequestItem::Space));
     }
-    formatted.extend(gen_node_with_trivia(&item_content)?);
+    formatted.extend(gen_node_with_trivia(options, &item_content)?);
 
     if expression_parens_are_irrelevant_policy(parenthesis_expression.syntax()) {
         formatted.request(Request::expect(RequestItem::Space));

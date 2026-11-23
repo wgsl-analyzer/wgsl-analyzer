@@ -7,6 +7,7 @@ use syntax::{
 };
 
 use crate::{
+    FormattingOptions,
     ast_parse::{
         DiscardBlankspace, DiscardBraces, DiscardComma, NoTrivia, StopAtNewline, Succeeding,
         parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
@@ -31,7 +32,8 @@ use crate::{
 // Vec<Comment> are either attached to after import items (or a the end of an import collection {a, b, /*hi*/})
 
 pub(crate) fn gen_import_package_relative(
-    node: &ast::ImportPackageRelative
+    #[expect(unused, reason = "no config is necessary here (yet)")] options: &FormattingOptions,
+    node: &ast::ImportPackageRelative,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
@@ -46,7 +48,8 @@ pub(crate) fn gen_import_package_relative(
     Ok(formatted)
 }
 pub(crate) fn gen_import_super_relative(
-    node: &ast::ImportSuperRelative
+    options: &FormattingOptions,
+    node: &ast::ImportSuperRelative,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
@@ -64,11 +67,14 @@ pub(crate) fn gen_import_super_relative(
     let mut formatted = PrintItemBuffer::default();
 
     for item in items {
-        formatted.extend(gen_node_with_trivia(&item)?);
+        formatted.extend(gen_node_with_trivia(options, &item)?);
     }
     Ok(formatted)
 }
-pub(crate) fn gen_import_item(node: &ast::ImportItem) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_import_item(
+    options: &FormattingOptions,
+    node: &ast::ImportItem,
+) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
     let item_name =
@@ -83,16 +89,19 @@ pub(crate) fn gen_import_item(node: &ast::ImportItem) -> FormatDocumentResult<Pr
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_name)?);
+    formatted.extend(gen_node_with_trivia(options, &item_name)?);
     if let Some(item_alias) = item_alias {
         formatted.request(Request::expect(RequestItem::Space));
         formatted.push_sc(sc!("as"));
         formatted.request(Request::expect(RequestItem::Space));
-        formatted.extend(gen_node_with_trivia(&item_alias)?);
+        formatted.extend(gen_node_with_trivia(options, &item_alias)?);
     }
     Ok(formatted)
 }
-pub(crate) fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_import_path(
+    options: &FormattingOptions,
+    node: &ast::ImportPath,
+) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
     let item_name =
@@ -109,17 +118,17 @@ pub(crate) fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<Pr
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    formatted.extend(gen_node_with_trivia(&item_name)?);
+    formatted.extend(gen_node_with_trivia(options, &item_name)?);
     formatted.push_sc(sc!("::"));
 
     if let Some(path) = item_path_rest {
-        formatted.extend(gen_node_with_trivia(&path)?);
+        formatted.extend(gen_node_with_trivia(options, &path)?);
     }
     if let Some(collection) = item_collection_rest {
-        formatted.extend(gen_node_with_trivia(&collection)?);
+        formatted.extend(gen_node_with_trivia(options, &collection)?);
     }
     if let Some(item) = item_item {
-        formatted.extend(gen_node_with_trivia(&item)?);
+        formatted.extend(gen_node_with_trivia(options, &item)?);
     }
 
     Ok(formatted)
@@ -193,7 +202,8 @@ impl PartialOrd for CmpImportTree<'_> {
 ///
 /// This should be enforced by the unit test below.
 pub(crate) fn gen_import_collection(
-    node: &ast::ImportCollection
+    options: &FormattingOptions,
+    node: &ast::ImportCollection,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
@@ -241,7 +251,7 @@ pub(crate) fn gen_import_collection(
     group.request(Request::discourage(RequestItem::Space));
 
     for (position, (item, _)) in items.iter().with_position() {
-        group.extend(gen_node_with_trivia(item)?);
+        group.extend(gen_node_with_trivia(options, item)?);
         if item.has_content() {
             group.request(Request::discourage(RequestItem::Space));
             if !position.is_last && !position.is_exactly_one() {
@@ -263,7 +273,8 @@ pub(crate) fn gen_import_collection(
 }
 
 pub(crate) fn gen_import_statement(
-    node: &ast::ImportStatement
+    options: &FormattingOptions,
+    node: &ast::ImportStatement,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
@@ -285,12 +296,12 @@ pub(crate) fn gen_import_statement(
     formatted.request(Request::expect(RequestItem::Space));
 
     if let Some(package_relative) = item_package_relative {
-        formatted.extend(gen_node_with_trivia(&package_relative)?);
+        formatted.extend(gen_node_with_trivia(options, &package_relative)?);
     }
     if let Some(super_relative) = item_super_relative {
-        formatted.extend(gen_node_with_trivia(&super_relative)?);
+        formatted.extend(gen_node_with_trivia(options, &super_relative)?);
     }
-    formatted.extend(gen_node_with_trivia(&item_entity)?);
+    formatted.extend(gen_node_with_trivia(options, &item_entity)?);
 
     if statement_needs_semicolon_policy(node.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));

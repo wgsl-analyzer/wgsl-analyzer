@@ -1,13 +1,15 @@
 use syntax::{AstNode as _, ast};
 
 use crate::{
+    FormattingOptions,
     ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     generators::node::gen_node_with_trivia,
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
 };
 pub(crate) fn gen_prefix_expression(
-    infix_expression: &ast::PrefixExpression
+    options: &FormattingOptions,
+    infix_expression: &ast::PrefixExpression,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(infix_expression.syntax());
@@ -21,7 +23,7 @@ pub(crate) fn gen_prefix_expression(
     let mut formatted = PrintItemBuffer::default();
     //I don't like to-stringing the operator here, would be better to special case on it,
     //In a benchmark on my machine however, removing this push_string() did not make any measurable impact - so it's fine.
-    formatted.extend(gen_node_with_trivia(&item_operator)?);
-    formatted.extend(gen_node_with_trivia(&item_expr)?);
+    formatted.extend(gen_node_with_trivia(options, &item_operator)?);
+    formatted.extend(gen_node_with_trivia(options, &item_expr)?);
     Ok(formatted)
 }

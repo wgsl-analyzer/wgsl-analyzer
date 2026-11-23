@@ -14,15 +14,22 @@ pub struct WgslFmtOptions {
     /// The indentation style to use.
     #[serde(default = "defaults::indent_style")]
     pub indent_style: IndentStyle,
+
     /// The number of spaces to indent by.
     #[serde(default = "defaults::indent_width")]
     pub indent_width: u8,
+
     /// The target width that lines should not exceed.
     #[serde(default = "defaults::max_line_width")]
     pub max_line_width: u32,
+
     /// The line break style to use.
     #[serde(default = "defaults::line_break_style")]
     pub line_break_style: LineBreakStyle,
+
+    /// The style of placement of `binding` and `group` attributes.
+    #[serde(default = "defaults::binding_group_style")]
+    pub binding_group_style: AttributeFormattingStyle,
 }
 
 #[expect(
@@ -32,7 +39,7 @@ pub struct WgslFmtOptions {
 mod defaults {
     use wgsl_formatter::FormattingOptions;
 
-    use crate::options::{IndentStyle, LineBreakStyle};
+    use crate::options::{AttributeFormattingStyle, IndentStyle, LineBreakStyle};
 
     pub const fn indent_style() -> IndentStyle {
         match FormattingOptions::const_default().indent_style {
@@ -57,6 +64,13 @@ mod defaults {
             },
         }
     }
+
+    pub const fn binding_group_style() -> AttributeFormattingStyle {
+        match FormattingOptions::const_default().binding_group_style {
+            wgsl_formatter::AttributeFormattingStyle::Grouped => AttributeFormattingStyle::Grouped,
+            wgsl_formatter::AttributeFormattingStyle::Inline => AttributeFormattingStyle::Inline,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -79,6 +93,14 @@ pub enum LineBreakStyle {
     LineFeed,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub enum AttributeFormattingStyle {
+    #[serde(rename = "grouped")]
+    Grouped,
+    #[serde(rename = "inline")]
+    Inline,
+}
+
 impl WgslFmtOptions {
     #[must_use]
     pub const fn to_formatting_options(&self) -> wgsl_formatter::FormattingOptions {
@@ -94,6 +116,14 @@ impl WgslFmtOptions {
                     wgsl_formatter::LineBreakStyle::CarriageReturnLineFeed
                 },
                 LineBreakStyle::LineFeed => wgsl_formatter::LineBreakStyle::LineFeed,
+            },
+            binding_group_style: match self.binding_group_style {
+                AttributeFormattingStyle::Grouped => {
+                    wgsl_formatter::AttributeFormattingStyle::Grouped
+                },
+                AttributeFormattingStyle::Inline => {
+                    wgsl_formatter::AttributeFormattingStyle::Inline
+                },
             },
         }
     }

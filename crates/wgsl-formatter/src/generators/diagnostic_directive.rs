@@ -2,6 +2,7 @@ use dprint_core_macros::sc;
 use syntax::{AstNode as _, SyntaxKind, ast};
 
 use crate::{
+    FormattingOptions,
     ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
@@ -13,7 +14,8 @@ use crate::{
 };
 
 pub(crate) fn gen_diagnostic_control(
-    node: &ast::DiagnosticControl
+    options: &FormattingOptions,
+    node: &ast::DiagnosticControl,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
 
@@ -33,10 +35,10 @@ pub(crate) fn gen_diagnostic_control(
     multiline_group.grouped_possible_newline();
     multiline_group.request(Request::discourage(RequestItem::EmptyLine));
     multiline_group.request(Request::discourage(RequestItem::Space));
-    multiline_group.extend(gen_node_with_trivia(&item_control_name)?);
+    multiline_group.extend(gen_node_with_trivia(options, &item_control_name)?);
     multiline_group.push_sc(sc!(","));
     multiline_group.grouped_newline_or_space();
-    multiline_group.extend(gen_node_with_trivia(&item_rule_name)?);
+    multiline_group.extend(gen_node_with_trivia(options, &item_rule_name)?);
     multiline_group.finish_indent_before_requests();
     multiline_group.grouped_possible_newline();
     multiline_group.push_sc(sc!(")"));
@@ -45,7 +47,8 @@ pub(crate) fn gen_diagnostic_control(
 }
 
 pub(crate) fn gen_severity_control_name(
-    node: &ast::SeverityControlName
+    options: &FormattingOptions,
+    node: &ast::SeverityControlName,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
     let item_identifier =
@@ -53,12 +56,13 @@ pub(crate) fn gen_severity_control_name(
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_identifier)?);
+    formatted.extend(gen_node_with_trivia(options, &item_identifier)?);
     Ok(formatted)
 }
 
 pub(crate) fn gen_diagnostic_rule_name(
-    node: &ast::DiagnosticRuleName
+    options: &FormattingOptions,
+    node: &ast::DiagnosticRuleName,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
 
@@ -78,10 +82,10 @@ pub(crate) fn gen_diagnostic_rule_name(
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_control_first)?);
+    formatted.extend(gen_node_with_trivia(options, &item_control_first)?);
     if let Some(item_control_second) = item_control_second {
         formatted.push_sc(sc!("."));
-        formatted.extend(gen_node_with_trivia(&item_control_second)?);
+        formatted.extend(gen_node_with_trivia(options, &item_control_second)?);
     }
     Ok(formatted)
 }

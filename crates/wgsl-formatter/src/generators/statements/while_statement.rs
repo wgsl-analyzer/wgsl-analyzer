@@ -5,6 +5,7 @@ use syntax::{
 };
 
 use crate::{
+    FormattingOptions,
     ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
@@ -15,7 +16,8 @@ use crate::{
 };
 
 pub(crate) fn gen_while_statement(
-    statement: &ast::WhileStatement
+    options: &FormattingOptions,
+    statement: &ast::WhileStatement,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
@@ -31,10 +33,10 @@ pub(crate) fn gen_while_statement(
     formatted.push_sc(sc!("while"));
     formatted.start_indent_before_requests();
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_condition)?);
+    formatted.extend(gen_node_with_trivia(options, &item_condition)?);
     formatted.finish_indent_before_requests();
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(gen_node_with_trivia(options, &item_body)?);
     formatted.request(Request::expect(RequestItem::LineBreak));
 
     Ok(formatted)

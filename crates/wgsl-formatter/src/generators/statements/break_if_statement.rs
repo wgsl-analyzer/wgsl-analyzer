@@ -5,6 +5,7 @@ use syntax::{
 };
 
 use crate::{
+    FormattingOptions,
     ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::statement_needs_semicolon_policy,
     generators::node::gen_node_with_trivia,
@@ -16,7 +17,8 @@ use crate::{
 };
 
 pub(crate) fn gen_break_if_statement(
-    statement: &ast::BreakIfStatement
+    options: &FormattingOptions,
+    statement: &ast::BreakIfStatement,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
@@ -30,12 +32,12 @@ pub(crate) fn gen_break_if_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_break)?);
+    formatted.extend(gen_node_with_trivia(options, &item_break)?);
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_if)?);
+    formatted.extend(gen_node_with_trivia(options, &item_if)?);
     formatted.start_indent_before_requests();
     formatted.request(Request::expect(RequestItem::Space).or_newline());
-    formatted.extend(gen_node_with_trivia(&item_condition)?);
+    formatted.extend(gen_node_with_trivia(options, &item_condition)?);
     formatted.request(Request::discourage(RequestItem::Space));
     if statement_needs_semicolon_policy(statement.syntax()) {
         formatted.push_sc(sc!(";"));
