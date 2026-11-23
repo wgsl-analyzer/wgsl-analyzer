@@ -124,6 +124,13 @@ impl Cst<'_> {
     }
 }
 
+fn is_valid_name_token(token: Token) -> bool {
+    matches!(
+        token,
+        Token::Identifier | Token::Private | Token::ColonColon | Token::Super | Token::Package
+    )
+}
+
 impl Parser<'_> {
     pub fn peek_text(
         &self,
@@ -145,17 +152,7 @@ impl Parser<'_> {
         matches!(
             self.tokens[self.pos..]
                 .iter()
-                .skip_while(|&token| {
-                    (Self::is_skipped(*token)
-                        || matches!(
-                            token,
-                            Token::Identifier
-                                | Token::Private
-                                | Token::ColonColon
-                                | Token::Super
-                                | Token::Package
-                        ))
-                })
+                .skip_while(|&token| { (Self::is_skipped(*token) || is_valid_name_token(*token)) })
                 .next(),
             Some(Token::ParenthesisLeft | Token::TemplateStart)
         )

@@ -286,19 +286,15 @@ ast_node! {
 }
 
 impl Visibility {
+    /// Returns the token that the visibility node contains.
+    ///
+    /// # Panics
+    ///
+    /// Panics if there is no token. The parser should always return a token.
     #[must_use]
-    pub fn kind(&self) -> Option<VisibilityKind> {
-        match support::child_token::<VisibilityToken>(self.syntax()) {
-            Some(VisibilityToken::Public(_)) => Some(VisibilityKind::Public),
-            Some(VisibilityToken::Private(_)) => Some(VisibilityKind::Private),
-            None => None,
-        }
+    pub fn visibility_token(&self) -> VisibilityToken {
+        support::child_token::<VisibilityToken>(self.syntax()).expect("invalid visibility parsed")
     }
-}
-
-pub enum VisibilityKind {
-    Public,
-    Private,
 }
 
 ast_token_enum! {

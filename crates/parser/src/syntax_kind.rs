@@ -186,7 +186,6 @@ pub enum SyntaxKind {
     Private,
 
     /// The visibility modifier.
-    /// Its children can be the [`SyntaxKind::Public`] or [`SyntaxKind::Identifier`] (private), because `private` is context sensitive.
     Visibility,
 
     // WESL experiment

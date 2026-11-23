@@ -478,3 +478,21 @@ fn sweep_super_simple_function_declaration_with_simple_types() {
         "#]],
     );
 }
+
+#[test]
+fn sweep_function_declaration_with_private() {
+    check_sweep(
+        "
+        private fn foo() {}
+        ",
+        expect![[r#"
+            // max_length: 26---------
+            private fn foo() {}
+
+            // max_length: 18-
+            private fn foo(
+            ) {}
+
+        "#]],
+    );
+}
