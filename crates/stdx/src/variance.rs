@@ -1,11 +1,13 @@
 #![expect(clippy::single_char_lifetime_names, reason = "really generic")]
 //! This is a copy of [`std::marker::variance`].
 
-use std::any::type_name;
-use std::cmp::Ordering;
-use std::fmt;
-use std::hash::{Hash, Hasher};
-use std::marker::PhantomData;
+use std::{
+    any::type_name,
+    cmp::Ordering,
+    fmt,
+    hash::{Hash, Hasher},
+    marker::PhantomData,
+};
 
 macro_rules! first_token {
     ($first:tt $($rest:tt)*) => {

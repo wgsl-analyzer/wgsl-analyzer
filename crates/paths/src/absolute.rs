@@ -65,6 +65,7 @@ impl Borrow<AbsPath> for AbsPathBuf {
 
 impl TryFrom<Utf8PathBuf> for AbsPathBuf {
     type Error = Utf8PathBuf;
+
     fn try_from(path_buf: Utf8PathBuf) -> Result<Self, Utf8PathBuf> {
         if !path_buf.is_absolute() {
             return Err(path_buf);
@@ -73,9 +74,10 @@ impl TryFrom<Utf8PathBuf> for AbsPathBuf {
     }
 }
 
-impl TryFrom<&str> for AbsPathBuf {
-    type Error = Utf8PathBuf;
-    fn try_from(path: &str) -> Result<Self, Utf8PathBuf> {
+impl core::str::FromStr for AbsPathBuf {
+    type Err = Utf8PathBuf;
+
+    fn from_str(path: &str) -> Result<Self, Self::Err> {
         Self::try_from(Utf8PathBuf::from(path))
     }
 }
@@ -331,7 +333,7 @@ impl AbsPath {
     /// # Panics
     ///
     /// Do not use.
-    #[deprecated]
+    #[deprecated(note = "do not use", since = "0.0.0")]
     #[expect(clippy::unused_self, reason = "intentional API")]
     pub fn canonicalize(&self) -> ! {
         panic!(
@@ -411,13 +413,13 @@ impl AbsPath {
     }
 
     #[expect(clippy::unimplemented, reason = "on purpose")]
-    #[deprecated(note = "use Display instead")]
+    #[deprecated(note = "use Display instead", since = "0.0.0")]
     pub fn display(&self) -> ! {
         unimplemented!("use Display instead")
     }
 
     #[expect(clippy::unimplemented, reason = "on purpose")]
-    #[deprecated(note = "use std::fs::metadata().is_ok() instead")]
+    #[deprecated(note = "use std::fs::metadata().is_ok() instead", since = "0.0.0")]
     pub fn exists(&self) -> ! {
         unimplemented!("use std::fs::metadata().is_ok() instead")
     }
@@ -439,10 +441,11 @@ impl fmt::Display for AbsPath {
 
 #[cfg(test)]
 mod tests {
+    use std::{ffi::OsStr, path::PathBuf};
+
     use camino::Utf8Component;
 
     use super::*;
-    use std::{ffi::OsStr, path::PathBuf};
 
     fn root_utf8() -> &'static Utf8Path {
         super::AbsPath::root().as_utf8_path()

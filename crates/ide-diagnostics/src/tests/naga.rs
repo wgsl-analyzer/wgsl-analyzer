@@ -1,6 +1,7 @@
+use expect_test::expect;
+
 use super::check_diagnostics_with_config;
 use crate::DiagnosticsConfig;
-use expect_test::expect;
 
 #[test]
 fn ambiguous_clamp_call() {

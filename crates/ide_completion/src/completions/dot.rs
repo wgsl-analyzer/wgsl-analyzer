@@ -175,7 +175,7 @@ fn is_swizzleable(field_text: &str) -> bool {
 
     let is_xyzw = field_text
         .chars()
-        .all(|character| matches!(character, 'x' | 'y' | 'z' | 'w'));
+        .all(|character| matches!(character, 'w'..='z'));
 
     is_rgba || is_xyzw
 }

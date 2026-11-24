@@ -57,9 +57,11 @@ impl Hasher for TypeIdHasher {
     }
 }
 
-use core::any::{Any, TypeId};
-use core::hash::BuildHasherDefault;
-use core::marker::PhantomData;
+use core::{
+    any::{Any, TypeId},
+    hash::BuildHasherDefault,
+    marker::PhantomData,
+};
 
 use ::std::collections::hash_map;
 
@@ -130,7 +132,7 @@ impl<A: ?Sized + Downcast> Map<A> {
     {
         self.raw
             .get(&TypeId::of::<T>())
-        	// SAFETY: T does match the trait object because `T: IntoBox<A>`.
+            // SAFETY: T does match the trait object because `T: IntoBox<A>`.
             .map(|any| unsafe { any.downcast_unchecked_ref::<T>() })
     }
 
@@ -246,8 +248,7 @@ mod tests {
 
     #[test]
     fn type_id_hasher() {
-        use core::any::TypeId;
-        use core::hash::Hash as _;
+        use core::{any::TypeId, hash::Hash as _};
         fn verify_hashing_with(type_id: TypeId) {
             let mut hasher = TypeIdHasher::default();
             type_id.hash(&mut hasher);

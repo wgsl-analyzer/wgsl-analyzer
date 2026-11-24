@@ -182,7 +182,6 @@ impl<'scope> Scope<'_, 'scope> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::{
         sync::{
             Arc,
@@ -191,6 +190,8 @@ mod tests {
         thread,
         time::Duration,
     };
+
+    use super::*;
 
     fn wait_for_empty(pool: &Pool) {
         while !pool.is_empty() {

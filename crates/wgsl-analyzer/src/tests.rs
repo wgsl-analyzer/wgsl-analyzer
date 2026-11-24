@@ -17,7 +17,8 @@ use crate::{
 };
 
 fn get_test_directory() -> AbsPathBuf {
-    AbsPathBuf::try_from(env!("CARGO_MANIFEST_DIR"))
+    env!("CARGO_MANIFEST_DIR")
+        .parse::<AbsPathBuf>()
         .unwrap()
         .join("src/tests")
 }
