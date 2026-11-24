@@ -306,9 +306,9 @@ mod windows_paths {
     }
 
     #[cfg(test)]
-    fn vfs(str: &str) -> super::VfsPath {
+    fn vfs(string: &str) -> super::VfsPath {
         use super::{AbsPathBuf, VfsPath};
-        VfsPath::from(AbsPathBuf::try_from(str).unwrap())
+        VfsPath::from(string.parse::<AbsPathBuf>().unwrap())
     }
 }
 
