@@ -476,7 +476,7 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
     }
 
     /// Called when a directive is visited.
-    fn action_global_item_2(
+    fn action_global_declaration_2(
         &mut self,
         diags: &mut Vec<Self::Diagnostic>,
     ) {
@@ -492,6 +492,13 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
 
     /// Called when a declaration is visited.
     fn action_global_item_3(
+        &mut self,
+        _diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        self.context.translation_unit_state = TranslationUnitState::Declarations;
+    }
+
+    fn action_global_declaration_3(
         &mut self,
         _diags: &mut Vec<Self::Diagnostic>,
     ) {

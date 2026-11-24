@@ -106,7 +106,7 @@ fn reject_public_visibility_before_const_assert() {
                   True@20..24 "true"
                 Semicolon@24..25 ";"
 
-            error at 7..19: invalid syntax, expected one of: 'alias', 'const', 'fn', 'let', 'override', 'struct', 'var'"#]],
+            error at 7..19: invalid syntax, expected one of: 'alias', 'const', 'fn', 'import', 'let', 'override', 'struct', 'var'"#]],
     );
 }
 
@@ -232,7 +232,7 @@ fn reject_public_and_private_visibility() {
                   BraceLeft@21..22 "{"
                   BraceRight@22..23 "}"
 
-            error at 7..14: invalid syntax, expected one of: 'alias', 'const', 'fn', 'let', 'override', 'struct', 'var'"#]],
+            error at 7..14: invalid syntax, expected one of: 'alias', 'const', 'fn', 'import', 'let', 'override', 'struct', 'var'"#]],
     );
 }
 
