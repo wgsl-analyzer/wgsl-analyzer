@@ -405,6 +405,7 @@ fn reserved_words_do_not_parse() {
             error at 779..788: 'protected' is a reserved word in WGSL
             error at 789..792: 'pub' is a reserved word in WGSL
             error at 793..799: 'public' is a reserved word in WGSL
+            error at 792..799: switch to WESL to use `public`
             error at 800..808: 'readonly' is a reserved word in WGSL
             error at 809..812: 'ref' is a reserved word in WGSL
             error at 813..823: 'regardless' is a reserved word in WGSL
@@ -453,7 +454,7 @@ fn reserved_words_do_not_parse() {
             error at 1132..1136: 'with' is a reserved word in WGSL
             error at 1137..1146: 'writeonly' is a reserved word in WGSL
             error at 1147..1152: 'yield' is a reserved word in WGSL
-            error at 9..13: invalid syntax, expected one of: 'alias', '@', '{', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
+            error at 9..13: invalid syntax, expected one of: 'alias', '@', '{', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'private', 'public', 'requires', ';', 'struct', 'var'"#]],
     );
 }
 
@@ -757,50 +758,50 @@ fn keywords_do_not_parse() {
                 Semicolon@563..564 ";"
               Blankspace@564..573 "\n        "
 
-            error at 13..18: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 18..19: invalid syntax, expected: <identifier>
-            error at 19..20: invalid syntax, expected one of: <identifier>, 'package', 'super'
-            error at 34..39: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 55..59: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 75..80: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 80..81: invalid syntax, expected: <identifier>
-            error at 96..108: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 108..109: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'
-            error at 124..132: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 148..158: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 174..181: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 197..207: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 13..18: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 18..19: invalid syntax, expected one of: <identifier>, 'private'
+            error at 19..20: invalid syntax, expected one of: <identifier>, 'package', 'private', 'super'
+            error at 34..39: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 55..59: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 75..80: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 80..81: invalid syntax, expected one of: <identifier>, 'private'
+            error at 96..108: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 108..109: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', 'private', '*', 'super', '~', 'true'
+            error at 124..132: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 148..158: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 174..181: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 197..207: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
             error at 197..207: directives must come before declarations
             error at 207..208: invalid syntax, expected: '('
-            error at 223..230: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 246..250: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 266..272: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 223..230: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 246..250: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 266..272: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
             error at 266..272: directives must come before declarations
-            error at 272..273: invalid syntax, expected: <identifier>
+            error at 272..273: invalid syntax, expected one of: <identifier>, 'private'
             error at 272..272: unknown extension: ``
-            error at 288..293: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 309..311: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 311..312: invalid syntax, expected: <identifier>
-            error at 327..330: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 346..348: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 364..367: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 367..368: invalid syntax, expected: <identifier>
+            error at 288..293: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 309..311: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 311..312: invalid syntax, expected one of: <identifier>, 'private'
+            error at 327..330: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 346..348: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 364..367: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 367..368: invalid syntax, expected one of: <identifier>, 'private'
             error at 364..370: global let declarations are not allowed
-            error at 383..387: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 403..411: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 411..412: invalid syntax, expected: <identifier>
-            error at 427..435: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 383..387: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 403..411: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 411..412: invalid syntax, expected one of: <identifier>, 'private'
+            error at 427..435: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
             error at 427..435: directives must come before declarations
-            error at 435..436: invalid syntax, expected: <identifier>
+            error at 435..436: invalid syntax, expected one of: <identifier>, 'private'
             error at 435..435: unknown extension: ``
-            error at 451..457: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 473..479: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 479..480: invalid syntax, expected: <identifier>
-            error at 495..501: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 517..521: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 537..540: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 540..541: invalid syntax, expected: <identifier>
-            error at 556..561: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>"#]],
+            error at 451..457: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 473..479: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 479..480: invalid syntax, expected one of: <identifier>, 'private'
+            error at 495..501: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 517..521: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 537..540: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
+            error at 540..541: invalid syntax, expected one of: <identifier>, 'private'
+            error at 556..561: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>"#]],
     );
 }
 

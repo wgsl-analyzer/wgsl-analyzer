@@ -25,7 +25,10 @@ pub(crate) fn gen_struct_declaration(
     // === Parse ===
     let mut syntax = syntax_iter(node.syntax());
 
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Struct)?;
+    let item_visibility =
+        parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Visibility, &mut syntax);
+    let item_struct =
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Struct)?;
     let item_name =
         parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Name)?;
     let item_body =
@@ -35,8 +38,13 @@ pub(crate) fn gen_struct_declaration(
     // === Format ===
     let mut formatted = PrintItemBuffer::default();
 
+    // Visibility
+    if let Some(item_visibility) = item_visibility {
+        formatted.extend(gen_node_with_trivia(options, &item_visibility)?);
+        formatted.request(Request::expect(RequestItem::Space));
+    }
     // Struct
-    formatted.push_sc(sc!("struct"));
+    formatted.extend(gen_node_with_trivia(options, &item_struct)?);
     formatted.request(Request::expect(RequestItem::Space));
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_node_with_trivia(options, &item_name)?);

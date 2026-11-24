@@ -21,3 +21,4 @@ pub(crate) mod struct_declaration;
 pub(crate) mod type_alias_declaration;
 pub(crate) mod types;
 pub(crate) mod verbatim;
+pub(crate) mod visibility;

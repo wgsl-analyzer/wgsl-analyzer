@@ -124,19 +124,35 @@ impl Cst<'_> {
     }
 }
 
+fn is_valid_name_token(token: Token) -> bool {
+    matches!(
+        token,
+        Token::Identifier | Token::Private | Token::ColonColon | Token::Super | Token::Package
+    )
+}
+
 impl Parser<'_> {
+    pub fn peek_text(
+        &self,
+        lookahead: usize,
+    ) -> Option<&str> {
+        let (token_index, _) = self
+            .tokens
+            .iter()
+            .enumerate()
+            .skip(self.pos)
+            .filter(|(_, token)| !Self::is_skipped(**token))
+            .nth(lookahead)?;
+
+        Some(&self.cst.source[self.cst.data.spans[token_index].clone()])
+    }
+
     fn is_func_call(&self) -> bool {
         // Skip past paths like `foo::bar::baz()`
         matches!(
             self.tokens[self.pos..]
                 .iter()
-                .skip_while(|&token| {
-                    (Self::is_skipped(*token)
-                        || matches!(
-                            token,
-                            Token::Identifier | Token::ColonColon | Token::Super | Token::Package
-                        ))
-                })
+                .skip_while(|&token| { (Self::is_skipped(*token) || is_valid_name_token(*token)) })
                 .next(),
             Some(Token::ParenthesisLeft | Token::TemplateStart)
         )
@@ -538,5 +554,16 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
 
     fn assertion_continuing_statement_1(&self) -> Option<Diagnostic> {
         self.assert_no_translate_time_attrs("a continuing body")
+    }
+
+    fn action_ident_1(
+        &mut self,
+        _diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        let mut last_node = &mut self.cst.data.nodes[self.cst.data.non_skip_len - 1];
+        match last_node {
+            Node::Rule(rule, cst_index) => panic!("Expected a context sensitive token ('private')"),
+            Node::Token(syntax_kind, cst_index) => *syntax_kind = SyntaxKind::Identifier,
+        }
     }
 }

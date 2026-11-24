@@ -3,6 +3,32 @@ use expect_test::expect;
 use crate::tests::{check, check_statement_with_edition, check_with_edition};
 
 #[test]
+fn att_priv() {
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "enable cat; enable private;",
+        expect![[r#"
+            SourceFile@0..27
+              EnableDirective@0..11
+                Enable@0..6 "enable"
+                Blankspace@6..7 " "
+                EnableExtensionName@7..10
+                  Identifier@7..10 "cat"
+                Semicolon@10..11 ";"
+              Blankspace@11..12 " "
+              EnableDirective@12..27
+                Enable@12..18 "enable"
+                Blankspace@18..19 " "
+                EnableExtensionName@19..26
+                  Identifier@19..26 "private"
+                Semicolon@26..27 ";"
+
+            error at 7..10: unknown extension: `cat`
+            error at 19..26: unknown extension: `private`"#]],
+    );
+}
+
+#[test]
 fn simplest_import_fail() {
     check(
         "import foo;",
@@ -16,7 +42,7 @@ fn simplest_import_fail() {
 
             error at 0..6: 'import' is a reserved word in WGSL
             error at 0..6: switch to WESL to use `import`
-            error at 0..6: invalid syntax, expected one of: 'alias', '@', '{', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
+            error at 0..6: invalid syntax, expected one of: 'alias', '@', '{', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'private', 'public', 'requires', ';', 'struct', 'var'"#]],
     );
 }
 

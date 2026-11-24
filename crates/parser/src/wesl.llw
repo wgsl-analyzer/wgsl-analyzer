@@ -86,6 +86,8 @@ token
 	Super='super'
 	As='as'
 	ColonColon='::'
+	Public='public'
+	Private='private'
 ;
 
 token
@@ -106,7 +108,10 @@ part expression;
 part statement;
 part type_specifier;
 
-attribute: '@' Identifier [?t attribute_arguments];
+// WGSL has context sensitive keywords, this is a helper for them.
+ident^: Identifier | Private #1;
+
+attribute: '@' ident [?t attribute_arguments];
 attribute_list: attribute*;
 
 translation_unit: (global_item | ';')*;
@@ -145,14 +150,18 @@ global_compound_declaration_item^:
 ;
 
 diagnostic_control: '(' severity_control_name ',' diagnostic_rule_name [','] ')';
-severity_control_name: Identifier;
-diagnostic_rule_name: Identifier ['.' Identifier];
-enable_extension_name: Identifier;
-language_extension_name: Identifier;
+severity_control_name: ident;
+diagnostic_rule_name: ident ['.' ident];
+enable_extension_name: ident;
+language_extension_name: ident;
 
 global_assert: 'const_assert' expression ';' @assert_statement; // §10
 
+visibility: 'public' | 'private';
+
+
 global_declaration:
+	[visibility] @const_declaration (
 	'fn' name function_parameters [return_type] attribute_list !1 compound_statement @function_declaration
 	| variable_declaration_semi @variable_declaration
 	| override_declaration_semi @override_declaration
@@ -160,7 +169,7 @@ global_declaration:
 	| const_declaration_semi @const_declaration
 	| 'alias' name '=' type_specifier ';' @type_alias_declaration
 	| 'struct' name struct_body @struct_declaration
-;
+);
 
 // Manual error recovery for missing commas between parameters
 function_parameters: '(' [attribute_list parameter (?1 (',' | !1) attribute_list parameter)* [',']] ')';
@@ -182,10 +191,10 @@ struct_member: name ':' type_specifier;
 typed_ident^: name (':' type_specifier | ());
 
 // declares an identifier
-name: Identifier;
+name: ident;
 
 // wesl identifier
-path: [import_package_relative | import_super_relative] Identifier ('::' !1 Identifier)*;
+path: [import_package_relative | import_super_relative] ident ('::' !1 ident)*;
 
 // Used in places where it's guaranteed to be a type
 type_specifier: path template_list;
@@ -202,7 +211,7 @@ template_args^: TemplateStart expression (?1 ',' expression)* [','] TemplateEnd;
 // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/616
 expression:
 	expression '[' expression ']' @indexing_expression // §8.5
-	| expression '.' (Identifier @field_expression) // §8.5, but cannot distinguish swizzles and fields from syntax
+	| expression '.' (ident @field_expression) // §8.5, but cannot distinguish swizzles and fields from syntax
 	| ('-' | '!' | '~' | '*' | '&') expression @unary_expression // §8.6, §8.7, §8.9, §8.13, §8.14
 	| expression ('*' | '/' | '%') expression @binary_expression // §8.7
 	| expression ('+' | '-') expression @binary_expression // §8.7
@@ -360,7 +369,7 @@ compound_assignment_operator^:
 
 lhs_expression:
 	lhs_expression '[' expression ']' @indexing_expression // §8.5
-	| lhs_expression '.' (Identifier @field_expression) // §8.5
+	| lhs_expression '.' (ident @field_expression) // §8.5
 	| '*' lhs_expression @unary_expression // §8.14
 	| '&' lhs_expression @unary_expression // §8.13
 	| '(' lhs_expression ')' @paren_expression // §8.4
