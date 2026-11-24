@@ -117,8 +117,8 @@ attribute_list: attribute*;
 translation_unit: (global_item | ';')*;
 global_item^:
 	attribute_list (
-	#1 import_statement
-	| #2 global_directive
+	#1 global_directive
+	| #2 import_statement
 	| #3 global_declaration
 	| #3 global_assert
 	| #3 global_compound_declaration

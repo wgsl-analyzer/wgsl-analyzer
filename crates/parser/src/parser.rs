@@ -21,8 +21,8 @@ include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 enum TranslationUnitState {
     #[default]
-    Imports,
     Directives,
+    Imports,
     Declarations,
 }
 
@@ -465,13 +465,13 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         &mut self,
         diags: &mut Vec<Self::Diagnostic>,
     ) {
-        if self.context.translation_unit_state > TranslationUnitState::Imports {
+        if self.context.translation_unit_state > TranslationUnitState::Directives {
             diags.push(self.create_diagnostic(
                 self.span(),
-                "import statements must come before other items".to_owned(),
+                "directives must come before other items".to_owned(),
             ));
         } else {
-            self.context.translation_unit_state = TranslationUnitState::Imports;
+            self.context.translation_unit_state = TranslationUnitState::Directives;
         }
     }
 
@@ -480,13 +480,13 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         &mut self,
         diags: &mut Vec<Self::Diagnostic>,
     ) {
-        if self.context.translation_unit_state > TranslationUnitState::Directives {
+        if self.context.translation_unit_state > TranslationUnitState::Imports {
             diags.push(self.create_diagnostic(
                 self.span(),
-                "directives must come before declarations".to_owned(),
+                "import statements must come before declarations".to_owned(),
             ));
         } else {
-            self.context.translation_unit_state = TranslationUnitState::Directives;
+            self.context.translation_unit_state = TranslationUnitState::Imports;
         }
     }
 
