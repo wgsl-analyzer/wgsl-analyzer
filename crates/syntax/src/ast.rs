@@ -1146,6 +1146,7 @@ ast_node! {
     selectors: Option<SwitchCaseSelectors>;
     block: Option<CompoundStatement>;
 }
+impl HasAttributes for SwitchBodyCase {}
 
 ast_token_enum! {
     enum CaseToken {
