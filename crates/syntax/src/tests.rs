@@ -461,3 +461,41 @@ fn operator_fun() {
         _ => panic!(),
     }
 }
+
+#[test]
+fn increment_decrement_statements() {
+    let parsed = check_errors(
+        "
+        fn foo() {
+            var x = 1;
+            x++;
+            x--;
+        }
+        ",
+        expect![""],
+    );
+    let Item::FunctionDeclaration(function_declaration) = parsed.tree().items().next().unwrap()
+    else {
+        panic!()
+    };
+    let mut statements = function_declaration.body().unwrap().statements();
+    let Statement::VariableDeclaration(_var_declaration) = statements.next().unwrap() else {
+        panic!()
+    };
+    let Statement::IncrementDecrementStatement(increment_statement) = statements.next().unwrap()
+    else {
+        panic!()
+    };
+    assert_eq!(
+        increment_statement.increment_decrement(),
+        Some(ast::IncrementDecrement::Increment)
+    );
+    let Statement::IncrementDecrementStatement(decrement_statement) = statements.next().unwrap()
+    else {
+        panic!()
+    };
+    assert_eq!(
+        decrement_statement.increment_decrement(),
+        Some(ast::IncrementDecrement::Decrement)
+    );
+}
