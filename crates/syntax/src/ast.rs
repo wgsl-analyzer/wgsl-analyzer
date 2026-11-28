@@ -679,6 +679,12 @@ ast_node! {
     r#type: Option<TypeSpecifier>;
 }
 
+impl HasAttributes for ReturnType {
+    fn attributes(&self) -> Option<AstChildren<self::Attribute>> {
+        inner_attributes(self)
+    }
+}
+
 ast_node! {
     TemplateList:
     left_angle_token: Option<SyntaxToken TemplateStart>;
@@ -691,7 +697,7 @@ ast_node! {
 }
 
 ast_token_enum! {
-    enum BinaryOperatorKind {
+    enum BinaryOperatorToken {
         EqualEqual,
         NotEqual,
         GreaterThan,
@@ -714,7 +720,7 @@ ast_token_enum! {
 }
 
 ast_token_enum! {
-    enum PrefixOperatorKind {
+    enum PrefixOperatorToken {
         Bang,
         Minus,
         Tilde,
@@ -739,13 +745,13 @@ impl Literal {
     ///
     /// Panics if the literal is invalid.
     #[must_use]
-    pub fn kind(&self) -> LiteralKind {
+    pub fn kind(&self) -> LiteralToken {
         support::child_token(self.syntax()).expect("invalid literal parsed")
     }
 }
 
 ast_token_enum! {
-    enum LiteralKind {
+    enum LiteralToken {
         IntLiteral,
         FloatLiteral,
         True,
@@ -892,6 +898,13 @@ impl Attribute {
     }
 }
 
+fn inner_attributes<T: AstNode>(node: &T) -> Option<AstChildren<Attribute>> {
+    if let Some(attr_list) = crate::support::child::<AttributeList>(node.syntax()) {
+        return Some(attr_list.attributes());
+    }
+    None
+}
+
 ast_node! {
     AttributeArguments:
     left_parenthesis_token: Option<SyntaxToken ParenthesisLeft>;
@@ -912,9 +925,19 @@ ast_node! {
 }
 
 ast_node! {
-    DiagnosticRuleName:
-    ident_token: Option<SyntaxToken Identifier>;
-    text: TokenText<'_>;
+    DiagnosticRuleName
+}
+
+impl DiagnosticRuleName {
+    #[must_use]
+    pub fn ident_tokens(&self) -> (Option<SyntaxToken>, Option<SyntaxToken>) {
+        let mut idents = self
+            .syntax
+            .children_with_tokens()
+            .filter_map(rowan::NodeOrToken::into_token)
+            .filter(|token| token.kind() == SyntaxKind::Identifier);
+        (idents.next(), idents.next())
+    }
 }
 
 ast_node! {
@@ -984,16 +1007,15 @@ impl IncrementDecrementStatement {
     }
 
     #[must_use]
+    #[expect(clippy::wildcard_enum_match_arm, reason = "too long")]
     pub fn increment_decrement(&self) -> Option<IncrementDecrement> {
         self.syntax()
             .children_with_tokens()
             .filter_map(rowan::NodeOrToken::into_token)
-            .find_map(|token| {
-                if let SyntaxKind::MinusMinus | SyntaxKind::PlusPlus = token.kind() {
-                    Some(IncrementDecrement::Increment)
-                } else {
-                    None
-                }
+            .find_map(|token| match token.kind() {
+                SyntaxKind::PlusPlus => Some(IncrementDecrement::Increment),
+                SyntaxKind::MinusMinus => Some(IncrementDecrement::Decrement),
+                _ => None,
             })
     }
 }
@@ -1006,7 +1028,7 @@ ast_node! {
 impl HasAttributes for AssertStatement {}
 
 ast_token_enum! {
-    enum CompoundAssignmentOperator {
+    enum CompoundAssignmentOperatorToken {
         PlusEqual,
         MinusEqual,
         TimesEqual,
@@ -1044,18 +1066,22 @@ impl CompoundAssignmentStatement {
 
     #[must_use]
     pub fn operator(&self) -> Option<AssignmentOperator> {
-        let kind: CompoundAssignmentOperator = support::child_token(self.syntax())?;
+        let kind: CompoundAssignmentOperatorToken = support::child_token(self.syntax())?;
         let operator = match kind {
-            CompoundAssignmentOperator::PlusEqual(_) => AssignmentOperator::PlusEqual,
-            CompoundAssignmentOperator::MinusEqual(_) => AssignmentOperator::MinusEqual,
-            CompoundAssignmentOperator::TimesEqual(_) => AssignmentOperator::TimesEqual,
-            CompoundAssignmentOperator::DivisionEqual(_) => AssignmentOperator::DivisionEqual,
-            CompoundAssignmentOperator::ModuloEqual(_) => AssignmentOperator::ModuloEqual,
-            CompoundAssignmentOperator::AndEqual(_) => AssignmentOperator::AndEqual,
-            CompoundAssignmentOperator::OrEqual(_) => AssignmentOperator::OrEqual,
-            CompoundAssignmentOperator::XorEqual(_) => AssignmentOperator::XorEqual,
-            CompoundAssignmentOperator::ShiftRightEqual(_) => AssignmentOperator::ShiftRightAssign,
-            CompoundAssignmentOperator::ShiftLeftEqual(_) => AssignmentOperator::ShiftLeftAssign,
+            CompoundAssignmentOperatorToken::PlusEqual(_) => AssignmentOperator::PlusEqual,
+            CompoundAssignmentOperatorToken::MinusEqual(_) => AssignmentOperator::MinusEqual,
+            CompoundAssignmentOperatorToken::TimesEqual(_) => AssignmentOperator::TimesEqual,
+            CompoundAssignmentOperatorToken::DivisionEqual(_) => AssignmentOperator::DivisionEqual,
+            CompoundAssignmentOperatorToken::ModuloEqual(_) => AssignmentOperator::ModuloEqual,
+            CompoundAssignmentOperatorToken::AndEqual(_) => AssignmentOperator::AndEqual,
+            CompoundAssignmentOperatorToken::OrEqual(_) => AssignmentOperator::OrEqual,
+            CompoundAssignmentOperatorToken::XorEqual(_) => AssignmentOperator::XorEqual,
+            CompoundAssignmentOperatorToken::ShiftRightEqual(_) => {
+                AssignmentOperator::ShiftRightAssign
+            },
+            CompoundAssignmentOperatorToken::ShiftLeftEqual(_) => {
+                AssignmentOperator::ShiftLeftAssign
+            },
         };
         Some(operator)
     }
@@ -1120,6 +1146,7 @@ ast_node! {
     selectors: Option<SwitchCaseSelectors>;
     block: Option<CompoundStatement>;
 }
+impl HasAttributes for SwitchBodyCase {}
 
 ast_token_enum! {
     enum CaseToken {
@@ -1343,32 +1370,32 @@ impl InfixExpression {
         self.syntax()
             .children_with_tokens()
             .filter_map(rowan::NodeOrToken::into_token)
-            .find(|operator| BinaryOperatorKind::can_cast(operator.kind()))
+            .find(|operator| BinaryOperatorToken::can_cast(operator.kind()))
     }
 
     #[must_use]
     pub fn operator_kind(&self) -> Option<BinaryOperation> {
-        if let Some(kind) = support::child_token::<BinaryOperatorKind>(self.syntax()) {
+        if let Some(kind) = support::child_token::<BinaryOperatorToken>(self.syntax()) {
             #[rustfmt::skip]
             let operation = match kind {
-                BinaryOperatorKind::EqualEqual(_) => BinaryOperation::Comparison(ComparisonOperation::Equality),
-                BinaryOperatorKind::NotEqual(_) => BinaryOperation::Comparison(ComparisonOperation::Inequality),
-                BinaryOperatorKind::GreaterThan(_) => BinaryOperation::Comparison(ComparisonOperation::GreaterThan),
-                BinaryOperatorKind::GreaterThanEqual(_) => BinaryOperation::Comparison(ComparisonOperation::GreaterThanEqual),
-                BinaryOperatorKind::LessThan(_) => BinaryOperation::Comparison(ComparisonOperation::LessThan),
-                BinaryOperatorKind::LessThanEqual(_) => BinaryOperation::Comparison(ComparisonOperation::LessThanEqual),
-                BinaryOperatorKind::Minus(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Subtraction),
-                BinaryOperatorKind::Plus(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Addition),
-                BinaryOperatorKind::Star(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Multiplication),
-                BinaryOperatorKind::ForwardSlash(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Division),
-                BinaryOperatorKind::Modulo(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Remainder),
-                BinaryOperatorKind::Or(_) => BinaryOperation::Arithmetic(ArithmeticOperation::BitwiseOr),
-                BinaryOperatorKind::And(_) => BinaryOperation::Arithmetic(ArithmeticOperation::BitwiseAnd),
-                BinaryOperatorKind::Xor(_)=>BinaryOperation::Arithmetic(ArithmeticOperation::BitwiseXor),
-                BinaryOperatorKind::OrOr(_) => BinaryOperation::Logical(LogicOperation::ShortCircuitOr),
-                BinaryOperatorKind::AndAnd(_) => BinaryOperation::Logical(LogicOperation::ShortCircuitAnd),
-                BinaryOperatorKind::ShiftRight(_) => BinaryOperation::Arithmetic(ArithmeticOperation::ShiftRight),
-                BinaryOperatorKind::ShiftLeft(_) => BinaryOperation::Arithmetic(ArithmeticOperation::ShiftLeft),
+                BinaryOperatorToken::EqualEqual(_) => BinaryOperation::Comparison(ComparisonOperation::Equality),
+                BinaryOperatorToken::NotEqual(_) => BinaryOperation::Comparison(ComparisonOperation::Inequality),
+                BinaryOperatorToken::GreaterThan(_) => BinaryOperation::Comparison(ComparisonOperation::GreaterThan),
+                BinaryOperatorToken::GreaterThanEqual(_) => BinaryOperation::Comparison(ComparisonOperation::GreaterThanEqual),
+                BinaryOperatorToken::LessThan(_) => BinaryOperation::Comparison(ComparisonOperation::LessThan),
+                BinaryOperatorToken::LessThanEqual(_) => BinaryOperation::Comparison(ComparisonOperation::LessThanEqual),
+                BinaryOperatorToken::Minus(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Subtraction),
+                BinaryOperatorToken::Plus(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Addition),
+                BinaryOperatorToken::Star(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Multiplication),
+                BinaryOperatorToken::ForwardSlash(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Division),
+                BinaryOperatorToken::Modulo(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Remainder),
+                BinaryOperatorToken::Or(_) => BinaryOperation::Arithmetic(ArithmeticOperation::BitwiseOr),
+                BinaryOperatorToken::And(_) => BinaryOperation::Arithmetic(ArithmeticOperation::BitwiseAnd),
+                BinaryOperatorToken::Xor(_)=>BinaryOperation::Arithmetic(ArithmeticOperation::BitwiseXor),
+                BinaryOperatorToken::OrOr(_) => BinaryOperation::Logical(LogicOperation::ShortCircuitOr),
+                BinaryOperatorToken::AndAnd(_) => BinaryOperation::Logical(LogicOperation::ShortCircuitAnd),
+                BinaryOperatorToken::ShiftRight(_) => BinaryOperation::Arithmetic(ArithmeticOperation::ShiftRight),
+                BinaryOperatorToken::ShiftLeft(_) => BinaryOperation::Arithmetic(ArithmeticOperation::ShiftLeft),
             };
             Some(operation)
         } else {
@@ -1380,13 +1407,13 @@ impl InfixExpression {
 impl PrefixExpression {
     #[must_use]
     pub fn operator_kind(&self) -> Option<UnaryOperator> {
-        let kind: PrefixOperatorKind = support::child_token(self.syntax())?;
+        let kind: PrefixOperatorToken = support::child_token(self.syntax())?;
         let operator = match kind {
-            PrefixOperatorKind::Minus(_) => UnaryOperator::Negation,
-            PrefixOperatorKind::Bang(_) => UnaryOperator::LogicalNegation,
-            PrefixOperatorKind::Tilde(_) => UnaryOperator::BitwiseComplement,
-            PrefixOperatorKind::Star(_) => UnaryOperator::Indirection,
-            PrefixOperatorKind::And(_) => UnaryOperator::AddressOf,
+            PrefixOperatorToken::Minus(_) => UnaryOperator::Negation,
+            PrefixOperatorToken::Bang(_) => UnaryOperator::LogicalNegation,
+            PrefixOperatorToken::Tilde(_) => UnaryOperator::BitwiseComplement,
+            PrefixOperatorToken::Star(_) => UnaryOperator::Indirection,
+            PrefixOperatorToken::And(_) => UnaryOperator::AddressOf,
         };
         Some(operator)
     }

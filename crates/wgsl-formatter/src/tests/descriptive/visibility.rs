@@ -93,6 +93,16 @@ fn format_visibility_before_type_alias() {
 }
 
 #[test]
+fn format_visibility_before_import() {
+    check(
+        "public    import foo  ::   private   ::  {  private  as   private  };",
+        expect![[r#"
+            public import foo::private::{private as private};
+        "#]],
+    );
+}
+
+#[test]
 fn format_long_item_does_not_break_visibility() {
     check_with_options(
         "

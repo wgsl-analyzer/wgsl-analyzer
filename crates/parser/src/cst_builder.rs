@@ -146,6 +146,7 @@ impl CstBuilder<'_, '_> {
             Rule::ConstDeclarationSemi
             | Rule::CompoundAssignmentOperator
             | Rule::ExprTemplateList
+            | Rule::ForLoopFunctionCallStatement
             | Rule::GlobalItem
             | Rule::GlobalCompoundDeclarationItem
             | Rule::IdentOrFunction

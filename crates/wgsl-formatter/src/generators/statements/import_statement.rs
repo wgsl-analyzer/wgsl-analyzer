@@ -278,7 +278,10 @@ pub(crate) fn gen_import_statement(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(ast::SyntaxKind::Import)?;
+    let item_visibility =
+        parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Visibility, &mut syntax);
+    let item_import_token =
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(ast::SyntaxKind::Import)?;
 
     let item_package_relative = parse_node_with(&mut syntax, DiscardBlankspace)
         .only_if_kind(SyntaxKind::ImportPackageRelative, &mut syntax);
@@ -292,7 +295,11 @@ pub(crate) fn gen_import_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("import"));
+    if let Some(item_visibility) = item_visibility {
+        formatted.extend(gen_node_with_trivia(options, &item_visibility)?);
+        formatted.request(Request::expect(RequestItem::Space));
+    }
+    formatted.extend(gen_node_with_trivia(options, &item_import_token)?);
     formatted.request(Request::expect(RequestItem::Space));
 
     if let Some(package_relative) = item_package_relative {

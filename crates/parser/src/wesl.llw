@@ -117,15 +117,14 @@ attribute_list: attribute*;
 translation_unit: (global_item | ';')*;
 global_item^:
 	attribute_list (
-	#1 import_statement
-	| #2 global_directive
-	| #3 global_declaration
+	#1 global_directive
+	| global_declaration
 	| #3 global_assert
 	| #3 global_compound_declaration
 );
 
 // WESL: Import statements
-import_statement: 'import' [import_package_relative | import_super_relative] (import_collection | import_path) ';';
+import_statement^: 'import' [import_package_relative | import_super_relative] (import_collection | import_path) ';';
 import_package_relative: 'package' '::';
 import_super_relative: ('super' '::')+;
 import_path: name (
@@ -162,13 +161,14 @@ visibility: 'public' | 'private';
 
 global_declaration:
 	[visibility] @const_declaration (
-	'fn' name function_parameters [return_type] attribute_list !1 compound_statement @function_declaration
-	| variable_declaration_semi @variable_declaration
-	| override_declaration_semi @override_declaration
-	| let_declaration_semi @global_let_declaration
-	| const_declaration_semi @const_declaration
-	| 'alias' name '=' type_specifier ';' @type_alias_declaration
-	| 'struct' name struct_body @struct_declaration
+	#2 import_statement @import_statement
+	| #3 'fn' name function_parameters [return_type] attribute_list !1 compound_statement @function_declaration
+	| #3 variable_declaration_semi @variable_declaration
+	| #3 override_declaration_semi @override_declaration
+	| #3 let_declaration_semi @global_let_declaration
+	| #3 const_declaration_semi @const_declaration
+	| #3 'alias' name '=' type_specifier ';' @type_alias_declaration
+	| #3 'struct' name struct_body @struct_declaration
 );
 
 // Manual error recovery for missing commas between parameters
@@ -306,10 +306,11 @@ continuing_compound_statement:
 
 break_if_statement: 'break' 'if' expression ';'; // §9.4.7
 
+
 for_init:
 	attribute_list
 	(
-		?1 function_call
+		?1 for_loop_function_call_statement
 		| variable_declaration
 		| let_declaration
 		| const_declaration
@@ -318,7 +319,9 @@ for_init:
 	;
 
 for_condition: expression;
-for_update: attribute_list (?1 function_call | variable_updating);
+for_update: attribute_list (?1 for_loop_function_call_statement | variable_updating);
+for_loop_function_call_statement: function_call @function_call_statement;
+
 if_clause: 'if' expression attribute_list !1 compound_statement;
 else_if_clause: 'else' 'if' expression attribute_list !1 compound_statement;
 else_clause: 'else' attribute_list !1 compound_statement;
