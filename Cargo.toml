@@ -97,7 +97,7 @@ tracing-subscriber = { version = "0.3.23", default-features = false, features = 
 tracing-tree = { version = "0.4.1", default-features = false }
 triomphe = { version = "0.1.17", default-features = false, features = ["std"] }
 unicode-ident = { version = "1.0.27", default-features = false }
-walkdir = { version = "2.5.0", default-features = false }
+walkdir = { version = "2.5.1", default-features = false }
 # wesl_metadata = { version = "0.0.1", default-features = false }
 wgsl-types = { version = "0.6.0", default-features = false, features = ["naga-ext"] }
 windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_System_Diagnostics_Debug", "Win32_System_Threading"] }
