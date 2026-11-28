@@ -9,8 +9,8 @@ use crate::{
     AstNode, HasAttributes as _, HasName as _, Parse,
     ast::{
         self, Attribute, CaseToken, Directive, EnableDirective, EnableExtension,
-        EnableExtensionName, Expression, FunctionCall, Item, LanguageExtension, LiteralKind,
-        Statement, SwitchCaseSelector, UnknownExtension,
+        EnableExtensionName, Expression, FunctionCall, Item, LanguageExtension, LiteralToken,
+        Statement, SwitchBodyCase, SwitchCaseSelector, UnknownExtension,
         operators::{ArithmeticOperation, BinaryOperation, UnaryOperator},
     },
     parse,
@@ -227,7 +227,7 @@ fn other_attribute() {
             }
             match infix_expression.right_side().unwrap() {
                 Expression::Literal(literal) => match literal.kind() {
-                    LiteralKind::IntLiteral(syntax_token) => {
+                    LiteralToken::IntLiteral(syntax_token) => {
                         assert_eq!(syntax_token.text(), "2");
                     },
                     _ => panic!("wrong literal"),
@@ -460,4 +460,75 @@ fn operator_fun() {
         },
         _ => panic!(),
     }
+}
+
+#[test]
+fn increment_decrement_statements() {
+    let parsed = check_errors(
+        "
+        fn foo() {
+            var x = 1;
+            x++;
+            x--;
+        }
+        ",
+        expect![""],
+    );
+    let Item::FunctionDeclaration(function_declaration) = parsed.tree().items().next().unwrap()
+    else {
+        panic!()
+    };
+    let mut statements = function_declaration.body().unwrap().statements();
+    let Statement::VariableDeclaration(_var_declaration) = statements.next().unwrap() else {
+        panic!()
+    };
+    let Statement::IncrementDecrementStatement(increment_statement) = statements.next().unwrap()
+    else {
+        panic!()
+    };
+    assert_eq!(
+        increment_statement.increment_decrement(),
+        Some(ast::IncrementDecrement::Increment)
+    );
+    let Statement::IncrementDecrementStatement(decrement_statement) = statements.next().unwrap()
+    else {
+        panic!()
+    };
+    assert_eq!(
+        decrement_statement.increment_decrement(),
+        Some(ast::IncrementDecrement::Decrement)
+    );
+}
+
+#[test]
+fn switch_case_selector() {
+    let parsed = check_errors(
+        "
+        fn foo() {
+            switch (bar) {
+                case 1, 2 {}
+                case default {}
+            }
+        }
+        ",
+        expect![""],
+    );
+
+    let Item::FunctionDeclaration(function_declaration) = parsed.tree().items().next().unwrap()
+    else {
+        panic!()
+    };
+    let compound_statement = function_declaration.body().unwrap();
+    let mut statements = compound_statement.statements();
+    let Statement::SwitchStatement(switch_statement) = statements.next().unwrap() else {
+        panic!()
+    };
+    let mut switch_cases = switch_statement.block().unwrap().cases();
+    let simple_case = switch_cases.next().unwrap();
+    assert_eq!(simple_case.selectors().unwrap().exprs().count(), 2);
+    let default_case = switch_cases.next().unwrap();
+    let default_selector = default_case.selectors().unwrap().exprs().next().unwrap();
+    let SwitchCaseSelector::SwitchDefaultSelector(_) = default_selector else {
+        panic!()
+    };
 }

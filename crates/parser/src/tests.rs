@@ -8,6 +8,7 @@ mod diagnostic;
 mod expression;
 mod imports;
 mod keywords;
+mod lexer;
 mod naga;
 mod statement;
 mod visibility;
@@ -2671,7 +2672,7 @@ fn requires_directive() {
 }
 
 #[test]
-fn directive_after_directive() {
+fn import_after_directive() {
     check_with_edition(
         edition::Edition::Wesl2025Unstable,
         "
@@ -2699,9 +2700,7 @@ fn directive_after_directive() {
                     Name@41..44
                       Identifier@41..44 "bar"
                 Semicolon@44..45 ";"
-              Blankspace@45..54 "\n        "
-
-            error at 29..35: import statements must come before other items"#]],
+              Blankspace@45..54 "\n        ""#]],
     );
 }
 
@@ -2741,7 +2740,7 @@ fn import_after_declaration() {
                 Semicolon@45..46 ";"
               Blankspace@46..55 "\n        "
 
-            error at 30..36: import statements must come before other items"#]],
+            error at 30..36: import statements must come before declarations"#]],
     );
 }
 
@@ -2775,7 +2774,7 @@ fn directive_after_declaration() {
                 Semicolon@40..41 ";"
               Blankspace@41..50 "\n        "
 
-            error at 30..36: directives must come before declarations"#]],
+            error at 30..36: directives must come before other items"#]],
     );
 }
 

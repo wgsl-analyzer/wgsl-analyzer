@@ -771,12 +771,12 @@ fn keywords_do_not_parse() {
             error at 148..158: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
             error at 174..181: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
             error at 197..207: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
-            error at 197..207: directives must come before declarations
+            error at 197..207: directives must come before other items
             error at 207..208: invalid syntax, expected: '('
             error at 223..230: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
             error at 246..250: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
             error at 266..272: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
-            error at 266..272: directives must come before declarations
+            error at 266..272: directives must come before other items
             error at 272..273: invalid syntax, expected one of: <identifier>, 'private'
             error at 272..272: unknown extension: ``
             error at 288..293: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
@@ -791,7 +791,7 @@ fn keywords_do_not_parse() {
             error at 403..411: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
             error at 411..412: invalid syntax, expected one of: <identifier>, 'private'
             error at 427..435: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
-            error at 427..435: directives must come before declarations
+            error at 427..435: directives must come before other items
             error at 435..436: invalid syntax, expected one of: <identifier>, 'private'
             error at 435..435: unknown extension: ``
             error at 451..457: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>

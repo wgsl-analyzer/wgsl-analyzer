@@ -21,8 +21,8 @@ include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 enum TranslationUnitState {
     #[default]
-    Imports,
     Directives,
+    Imports,
     Declarations,
 }
 
@@ -465,33 +465,40 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         &mut self,
         diags: &mut Vec<Self::Diagnostic>,
     ) {
-        if self.context.translation_unit_state > TranslationUnitState::Imports {
-            diags.push(self.create_diagnostic(
-                self.span(),
-                "import statements must come before other items".to_owned(),
-            ));
-        } else {
-            self.context.translation_unit_state = TranslationUnitState::Imports;
-        }
-    }
-
-    /// Called when a directive is visited.
-    fn action_global_item_2(
-        &mut self,
-        diags: &mut Vec<Self::Diagnostic>,
-    ) {
         if self.context.translation_unit_state > TranslationUnitState::Directives {
             diags.push(self.create_diagnostic(
                 self.span(),
-                "directives must come before declarations".to_owned(),
+                "directives must come before other items".to_owned(),
             ));
         } else {
             self.context.translation_unit_state = TranslationUnitState::Directives;
         }
     }
 
+    /// Called when a directive is visited.
+    fn action_global_declaration_2(
+        &mut self,
+        diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        if self.context.translation_unit_state > TranslationUnitState::Imports {
+            diags.push(self.create_diagnostic(
+                self.span(),
+                "import statements must come before declarations".to_owned(),
+            ));
+        } else {
+            self.context.translation_unit_state = TranslationUnitState::Imports;
+        }
+    }
+
     /// Called when a declaration is visited.
     fn action_global_item_3(
+        &mut self,
+        _diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        self.context.translation_unit_state = TranslationUnitState::Declarations;
+    }
+
+    fn action_global_declaration_3(
         &mut self,
         _diags: &mut Vec<Self::Diagnostic>,
     ) {
