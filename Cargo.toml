@@ -222,6 +222,8 @@ missing_inline_in_public_items = "allow"
 indexing_slicing = "allow"
 # the reason is always "not using values is smelly"
 must_use_without_reason = "allow"
+# Both styles are valid
+inline_trait_bounds = "allow"
 
 # tombi: format.rules.table-keys-order.disabled = true
 [workspace.lints.rust]
