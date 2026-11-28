@@ -160,6 +160,7 @@ fn apply_package_graph(
             display_name: None,
             dependencies: Vec::new(),
             origin: package_data.origin,
+            features: FxHashMap::default(),
         };
         // Salsa does not have a removal API yet, see: https://github.com/salsa-rs/salsa/issues/37
         remaining_package.set_data(db).to(dummy_package);
@@ -355,6 +356,7 @@ mod tests {
 
     use edition::Edition;
     use expect_test::expect;
+    use rustc_hash::FxHashMap;
     use triomphe::Arc;
     use vfs::{AbsPathBuf, VfsPath, file_set::FileSet};
 
@@ -400,6 +402,7 @@ mod tests {
                 display_name: None,
                 dependencies,
                 origin: PackageOrigin::Local,
+                features: FxHashMap::default(),
             },
         )
     }

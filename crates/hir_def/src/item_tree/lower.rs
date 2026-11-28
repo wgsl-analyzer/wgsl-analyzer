@@ -1,4 +1,5 @@
-use base_db::{EditionedFileId, SourceDatabase};
+use base_db::{EditionedFileId, SourceDatabase, file_package};
+use rustc_hash::FxHashMap;
 use syntax::{
     HasName as _,
     ast::{Item, SourceFile},
@@ -20,6 +21,9 @@ pub(crate) struct Ctx<'db> {
     source_ast_id_map: &'db AstIdMap,
     pub(crate) tree: ItemTree,
     pub(crate) items: Vec<ModuleItemId>,
+
+    features: std::borrow::Cow<'db, FxHashMap<String, bool>>,
+    skip_else_branches: bool,
 }
 
 impl<'db> Ctx<'db> {
@@ -27,12 +31,17 @@ impl<'db> Ctx<'db> {
         db: &'db dyn SourceDatabase,
         file_id: EditionedFileId,
     ) -> Self {
+        let features = file_package(db, file_id.file_id(db))
+            .map(|package| std::borrow::Cow::Borrowed(&package.data(db).features))
+            .unwrap_or_else(|| std::borrow::Cow::Owned(FxHashMap::default()));
         Self {
             db,
             file_id,
             source_ast_id_map: AstIdMap::of(db, file_id),
             tree: ItemTree::default(),
             items: vec![],
+            features,
+            skip_else_branches: false,
         }
     }
 
@@ -51,6 +60,21 @@ impl<'db> Ctx<'db> {
         &mut self,
         item: Item,
     ) -> Option<()> {
+        if self.skip_else_branches && crate::attributes::is_else_branch(&item) {
+            return None;
+        }
+
+        let conditional_compilation = crate::attributes::eval_cond_comp(&item, &self.features);
+        match conditional_compilation {
+            Some(true) => self.skip_else_branches = true,
+            Some(false) => {
+                self.skip_else_branches = false;
+                return None;
+            },
+            None => {
+                self.skip_else_branches = false;
+            },
+        }
         match item {
             Item::ImportStatement(import_statement) => {
                 let file_ast_id = self.lower_import(&import_statement)?;
